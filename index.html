@@ -202,10 +202,10 @@ ul.sales li:last-child { border-bottom: 0; }
   <section class="panel">
     <h2>メンバーの名前</h2>
     <div class="names">
-      <label>1人目<input id="name0" type="text" placeholder="1人目"></label>
-      <label>2人目<input id="name1" type="text" placeholder="2人目"></label>
-      <label>3人目<input id="name2" type="text" placeholder="3人目"></label>
-      <label>4人目<input id="name3" type="text" placeholder="4人目"></label>
+      <label>1人目<input id="name0" type="text" placeholder="て"></label>
+      <label>2人目<input id="name1" type="text" placeholder="ぜ"></label>
+      <label>3人目<input id="name2" type="text" placeholder="し"></label>
+      <label>4人目<input id="name3" type="text" placeholder="あ"></label>
     </div>
   </section>
 
@@ -219,6 +219,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxogqR_Uz7CpcF58lXpLgXK
 /* ===================================================================== */
 
 const PEOPLE = [0, 1, 2, 3];
+const DEFAULT_NAMES = ["て", "ぜ", "し", "あ"];
 const GOAL = 200000;
 const POLL_MS = 5000;
 const CATS = [
@@ -235,7 +236,7 @@ const $ = id => document.getElementById(id);
 let sales = [], names = PEOPLE.map(() => "");
 let selWho = 0, selCat = "服", filter = "all", confirming = false, sureId = null;
 let busy = false, namesEditing = false;
-const nm = i => names[i] || `${i + 1}人目`;
+const nm = i => names[i] || DEFAULT_NAMES[i];
 
 function setStatus(kind, text) { const s = $("status"); s.className = "status " + kind; s.lastElementChild.textContent = text; }
 function notice(text) { $("notice").textContent = text; $("notice").hidden = !text; }
