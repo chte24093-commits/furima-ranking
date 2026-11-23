@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>フリマ売上ランキング</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+/* 値札（プライスタグ）がモチーフ。上に順位、次に入力、ジャンル別、売上リスト */
+:root {
+  --bg: #eef2f0; --surface: #ffffff; --fg: #1d2a26; --muted: #5d6e68; --line: #d3ddd9;
+  --accent: #1f6e55; --accent-fg: #ffffff; --tag: #ffd84d; --tag-fg: #2b2400;
+  --gold: #e0a800; --silver: #8d9aa3; --bronze: #b8703a; --danger: #c0392b;
+  --c-fuku: #3b6fd6; --c-sara: #2a9d8f; --c-kutsu: #c2571d; --c-zakka: #8a5cc7;
+  --display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  --body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121a17; --surface: #1b2622; --fg: #e6efeb; --muted: #9db0a9; --line: #2e3d38;
+  --accent: #4fc39a; --accent-fg: #0c1a15; --tag: #f2c94c; --tag-fg: #2b2400;
+  --gold: #f2c94c; --silver: #b5c1c8; --bronze: #d9915a; --danger: #ff7b6b;
+  --c-fuku: #7ea3f0; --c-sara: #5cc6b8; --c-kutsu: #f0925a; --c-zakka: #b896ea; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121a17; --surface: #1b2622; --fg: #e6efeb; --muted: #9db0a9; --line: #2e3d38;
+  --accent: #4fc39a; --accent-fg: #0c1a15; --tag: #f2c94c; --tag-fg: #2b2400;
+  --gold: #f2c94c; --silver: #b5c1c8; --bronze: #d9915a; --danger: #ff7b6b;
+  --c-fuku: #7ea3f0; --c-sara: #5cc6b8; --c-kutsu: #f0925a; --c-zakka: #b896ea; color-scheme: dark }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 760px; margin: 0 auto; padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 24px; }
+h1 { font-family: var(--display); font-weight: 900; font-size: 1.9rem; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 700; font-size: 1.15rem; margin: 0 0 12px; }
+.sub { color: var(--muted); margin: 4px 0 0; font-size: .9rem; }
+.num { font-variant-numeric: tabular-nums; }
+.status { font-size: .85rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.status.live i { background: var(--accent); }
+.status.bad i { background: var(--danger); }
+.notice { background: var(--tag); color: var(--tag-fg); border-radius: 8px; padding: 10px 12px; font-size: .9rem; margin: 0; }
+
+/* 目標 */
+.goal { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 8px; }
+.goal.done { border: 2px solid var(--accent); }
+.goal-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.goal-label { font-size: .8rem; color: var(--muted); letter-spacing: .04em; }
+.goal-now { font-family: var(--display); font-weight: 900; font-size: 1.8rem; line-height: 1.2; }
+.goal-now small { font-size: .95rem; color: var(--muted); font-weight: 700; margin-left: 4px; }
+.goal-pct { font-family: var(--display); font-weight: 900; font-size: 1.4rem; color: var(--accent); }
+.goal-bar { height: 14px; background: var(--line); border-radius: 7px; overflow: hidden; }
+.goal-bar i { display: block; height: 100%; background: var(--accent); border-radius: 7px; transition: width .4s; }
+.goal-rest { font-size: .9rem; margin: 0; }
+.goal-rest b { font-size: 1.05rem; }
+
+/* ランキング */
+.ranks { display: grid; gap: 12px; }
+.rank { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.rank.first { border: 2px solid var(--gold); padding: 18px 16px; }
+.medal { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--display); font-weight: 900; font-size: 1.3rem; color: #fff; }
+.medal small { font-size: .7rem; margin-left: 1px; }
+.m1 { background: var(--gold); } .m2 { background: var(--silver); } .m3 { background: var(--bronze); } .m4 { background: var(--muted); }
+.who { min-width: 0; }
+.who .name { font-family: var(--display); font-weight: 700; font-size: 1.2rem; overflow-wrap: anywhere; }
+.who .meta { color: var(--muted); font-size: .85rem; }
+.mix { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--line); margin-top: 6px; }
+.mix span { display: block; height: 100%; transition: width .3s; }
+.cats { display: flex; gap: 6px 10px; flex-wrap: wrap; margin-top: 6px; font-size: .8rem; color: var(--muted); }
+.cats b { color: var(--fg); font-weight: 700; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; vertical-align: 1px; }
+.tag { position: relative; background: var(--tag); color: var(--tag-fg); font-family: var(--display); font-weight: 900;
+  font-size: 1.25rem; padding: 6px 14px 6px 22px; border-radius: 4px 8px 8px 4px;
+  clip-path: polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%); white-space: nowrap; }
+.tag::before { content: ""; position: absolute; left: 9px; top: 50%; width: 6px; height: 6px; margin-top: -3px;
+  border-radius: 50%; background: var(--surface); }
+.rank.first .tag { font-size: 1.5rem; }
+.grand { text-align: right; margin: 0; }
+
+/* パネル・入力 */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 16px; }
+label, .lbl { display: grid; gap: 4px; font-size: .8rem; color: var(--muted); font-weight: 500; }
+input, select { font: inherit; font-size: 1rem; color: var(--fg); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+form.add { display: grid; gap: 14px; }
+.seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.seg.people { grid-template-columns: repeat(4, 1fr); }
+.seg button { background: var(--bg); color: var(--fg); border: 1px solid var(--line); padding: 10px 6px; font-weight: 700;
+  overflow-wrap: anywhere; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.seg.cat button[aria-pressed="true"] { background: var(--cc); border-color: var(--cc); color: #fff; }
+.row { display: grid; grid-template-columns: 2fr 1.2fr .7fr auto; gap: 10px; align-items: end; }
+button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid transparent; padding: 9px 16px; font-weight: 700; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.primary { background: var(--accent); color: var(--accent-fg); }
+.ghost { background: transparent; color: var(--muted); border-color: var(--line); font-weight: 500; }
+.ghost:hover { color: var(--fg); }
+.danger { background: var(--danger); color: #fff; }
+.err { color: var(--danger); font-size: .85rem; margin: 0; min-height: 1.2em; }
+
+/* ジャンル別 */
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-size: .75rem; color: var(--muted); font-weight: 500; letter-spacing: .04em; }
+tfoot td { font-weight: 700; border-bottom: 0; }
+td small { color: var(--muted); font-weight: 400; margin-left: 2px; }
+
+/* 売上リスト */
+.list-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.list-head h2 { margin: 0; }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { background: transparent; border: 1px solid var(--line); color: var(--muted); padding: 4px 12px; border-radius: 999px; font-weight: 500; font-size: .85rem; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+ul.sales { list-style: none; margin: 0; padding: 0; display: grid; }
+ul.sales li { display: grid; grid-template-columns: 5.5em 1fr auto auto; gap: 4px 10px; align-items: center;
+  padding: 9px 2px; border-bottom: 1px solid var(--line); }
+ul.sales li:last-child { border-bottom: 0; }
+.pill { font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line);
+  text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item { min-width: 0; overflow-wrap: anywhere; }
+.ctag { font-size: .72rem; font-weight: 700; color: #fff; background: var(--cc); padding: 1px 7px; border-radius: 4px; margin-right: 6px; white-space: nowrap; }
+.item small { color: var(--muted); }
+.time { color: var(--muted); font-size: .75rem; margin-left: 6px; }
+.price { font-weight: 700; }
+.del { background: transparent; color: var(--muted); padding: 4px 8px; font-weight: 500; font-size: .85rem; border: 1px solid transparent; }
+.del:hover { color: var(--danger); }
+.del.sure { color: #fff; background: var(--danger); }
+.empty { color: var(--muted); text-align: center; padding: 18px 0; display: block !important; }
+.names { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: .9rem; }
+
+@media (max-width: 620px) {
+  .row { grid-template-columns: 1fr 1fr; }
+  .row .f-item { grid-column: 1 / -1; }
+  .row button { grid-column: 1 / -1; }
+  .seg.cat, .seg.people { grid-template-columns: repeat(2, 1fr); }
+  .names { grid-template-columns: 1fr; }
+  .rank { grid-template-columns: 48px 1fr; }
+  .medal { width: 44px; height: 44px; font-size: 1.05rem; }
+  .rank .tag { grid-column: 2; justify-self: start; }
+  ul.sales li { grid-template-columns: 4.5em 1fr auto; }
+  ul.sales li .price { grid-column: 3; grid-row: 1; }
+  ul.sales li .del { grid-column: 3; grid-row: 2; justify-self: end; }
+}
+@media (prefers-reduced-motion: reduce) { .mix span, .goal-bar i { transition: none; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>フリマ売上ランキング</h1>
+    <p class="sub">売れたらジャンルと金額を入れるだけ。4人のスマホで同じランキングが見られます。</p>
+    <p class="status" id="status"><i></i><span>読み込み中…</span></p>
+  </header>
+
+  <p class="notice" id="notice" hidden></p>
+
+  <section class="goal" id="goal" aria-label="目標"></section>
+
+  <section aria-label="順位">
+    <div class="ranks" id="ranks"></div>
+  </section>
+
+  <section class="panel" id="addPanel">
+    <h2>売れたものを追加</h2>
+    <form class="add" id="addForm" autocomplete="off">
+      <div class="lbl">だれが売った<div class="seg people" id="whoSeg"></div></div>
+      <div class="lbl">ジャンル<div class="seg cat" id="catSeg"></div></div>
+      <div class="row">
+        <label class="f-item">品名・メモ（なくてもOK）<input id="item" type="text" placeholder="例：白いシャツ"></label>
+        <label>金額（円）<input id="price" type="number" inputmode="numeric" min="1" step="1" placeholder="1500"></label>
+        <label>個数<input id="qty" type="number" inputmode="numeric" min="1" step="1" value="1"></label>
+        <button class="primary" type="submit" id="addBtn">追加</button>
+      </div>
+      <p class="err" id="err" role="alert"></p>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>ジャンル別</h2>
+    <div class="table-wrap"><table id="catTable"></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="list-head">
+      <h2>売れたものの記録</h2>
+      <div class="filters" id="filters"></div>
+    </div>
+    <ul class="sales" id="sales"></ul>
+  </section>
+
+  <section class="panel">
+    <h2>メンバーの名前</h2>
+    <div class="names">
+      <label>1人目<input id="name0" type="text" placeholder="1人目"></label>
+      <label>2人目<input id="name1" type="text" placeholder="2人目"></label>
+      <label>3人目<input id="name2" type="text" placeholder="3人目"></label>
+      <label>4人目<input id="name3" type="text" placeholder="4人目"></label>
+    </div>
+  </section>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+
+<script>
+/* ===== 設定：Google Apps Script の「ウェブアプリURL」をここに貼る ===== */
+const API_URL = "";
+/* ===================================================================== */
+
+const PEOPLE = [0, 1, 2, 3];
+const GOAL = 200000;
+const POLL_MS = 5000;
+const CATS = [
+  { key: "服", color: "var(--c-fuku)" },
+  { key: "皿", color: "var(--c-sara)" },
+  { key: "靴", color: "var(--c-kutsu)" },
+  { key: "その他雑貨", color: "var(--c-zakka)" },
+];
+const catColor = k => (CATS.find(c => c.key === k) || CATS[3]).color;
+const yen = n => "¥" + n.toLocaleString("ja-JP");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const $ = id => document.getElementById(id);
+
+let sales = [], names = PEOPLE.map(() => "");
+let selWho = 0, selCat = "服", filter = "all", confirming = false, sureId = null;
+let busy = false, namesEditing = false;
+const nm = i => names[i] || `${i + 1}人目`;
+
+function setStatus(kind, text) { const s = $("status"); s.className = "status " + kind; s.lastElementChild.textContent = text; }
+function notice(text) { $("notice").textContent = text; $("notice").hidden = !text; }
+function fmtTime(t) { if (!t) return ""; const d = new Date(t); return d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); }
+const pad = n => String(n).padStart(2, "0");
+
+/* ---------- 通信 ---------- */
+function apply(data) {
+  if (!data || !data.ok) return;
+  sales = (data.sales || []).filter(s => typeof s.price === "number" && s.price > 0);
+  if (!namesEditing) names = PEOPLE.map(i => (data.names || [])[i] || "");
+  const d = new Date();
+  setStatus("live", `みんなで共有中・最終更新 ${d.getHours()}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`);
+  render();
+}
+async function load() {
+  if (!API_URL || busy || document.hidden) return;
+  try {
+    const r = await fetch(API_URL, { cache: "no-store" });
+    const data = await r.json();
+    if (!busy) apply(data);
+  } catch (e) { setStatus("bad", "スプレッドシートにつながりません。通信を確認してください（自動で再試行します）"); }
+}
+async function post(body) {
+  busy = true;
+  try {
+    const r = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || "error");
+    busy = false; apply(data); return true;
+  } catch (e) { busy = false; return false; }
+}
+
+/* ---------- 集計 ---------- */
+function totals() {
+  const t = PEOPLE.map(i => ({ i, sum: 0, count: 0, cats: Object.fromEntries(CATS.map(c => [c.key, { sum: 0, count: 0 }])) }));
+  for (const s of sales) {
+    const r = t[s.who]; if (!r) continue;
+    const v = s.price * s.qty; r.sum += v; r.count += s.qty;
+    const c = r.cats[s.cat] || r.cats["その他雑貨"]; c.sum += v; c.count += s.qty;
+  }
+  const sorted = t.slice().sort((a, b) => b.sum - a.sum || a.i - b.i);
+  sorted.forEach((r, k) => { r.rank = k > 0 && r.sum === sorted[k - 1].sum ? sorted[k - 1].rank : k + 1; });
+  return { byPerson: t, sorted };
+}
+
+/* ---------- 描画 ---------- */
+function renderGoal(grand) {
+  const pct = Math.min(100, grand / GOAL * 100), done = grand >= GOAL;
+  const g = $("goal"); g.classList.toggle("done", done);
+  g.innerHTML = `<div class="goal-top"><div><div class="goal-label">4人の目標 ${yen(GOAL)}</div>
+      <div class="goal-now num">${yen(grand)}<small>/ ${yen(GOAL)}</small></div></div>
+      <div class="goal-pct num">${Math.floor(grand / GOAL * 100)}%</div></div>
+    <div class="goal-bar"><i style="width:${pct}%"></i></div>
+    <p class="goal-rest num">${done ? `<b>目標達成！</b> ${yen(grand - GOAL)} 上回っています。` : `目標まで あと <b>${yen(GOAL - grand)}</b>（1人あたり ${yen(Math.ceil((GOAL - grand) / PEOPLE.length))}）`}</p>`;
+}
+
+function renderRanks() {
+  const { sorted } = totals(), grand = sorted.reduce((a, r) => a + r.sum, 0);
+  renderGoal(grand);
+  $("ranks").innerHTML = sorted.map(r => {
+    const meta = [`${r.count}点 売れた`];
+    if (r.rank > 1) meta.push(`1位まで あと${yen(sorted[0].sum - r.sum)}`);
+    else if (grand > 0) meta.push(`全体の${Math.round(r.sum / grand * 100)}%`);
+    const width = sorted[0].sum ? r.sum / sorted[0].sum * 100 : 0;
+    const segs = CATS.map(c => {
+      const v = r.cats[c.key].sum; return v ? `<span style="width:${r.sum ? v / r.sum * width : 0}%;background:${c.color}" title="${c.key} ${yen(v)}"></span>` : "";
+    }).join("");
+    const cats = CATS.filter(c => r.cats[c.key].count).map(c =>
+      `<span><i class="dot" style="background:${c.color}"></i>${c.key} <b class="num">${r.cats[c.key].count}</b></span>`).join("");
+    return `<div class="rank ${r.rank === 1 && r.sum > 0 ? "first" : ""}">
+      <div class="medal m${r.rank}">${r.rank}<small>位</small></div>
+      <div class="who"><div class="name">${esc(nm(r.i))}</div>
+        <div class="meta">${meta.join("・")}</div>
+        <div class="mix">${segs}</div>
+        ${cats ? `<div class="cats">${cats}</div>` : ""}</div>
+      <div class="tag num">${yen(r.sum)}</div></div>`;
+  }).join("") + `<p class="sub num grand">4人の合計 <b>${yen(grand)}</b></p>`;
+}
+
+function renderCatTable() {
+  const { byPerson } = totals();
+  const head = `<thead><tr><th>ジャンル</th>${byPerson.map(r => `<th>${esc(nm(r.i))}</th>`).join("")}<th>合計</th></tr></thead>`;
+  const body = CATS.map(c => {
+    const cells = byPerson.map(r => { const x = r.cats[c.key]; return `<td class="num">${x.count ? `${yen(x.sum)}<small>${x.count}点</small>` : "—"}</td>`; });
+    const sum = byPerson.reduce((a, r) => a + r.cats[c.key].sum, 0), cnt = byPerson.reduce((a, r) => a + r.cats[c.key].count, 0);
+    return `<tr><td><i class="dot" style="background:${c.color}"></i>${c.key}</td>${cells.join("")}<td class="num"><b>${cnt ? yen(sum) : "—"}</b>${cnt ? `<small>${cnt}点</small>` : ""}</td></tr>`;
+  }).join("");
+  const grand = byPerson.reduce((a, r) => a + r.sum, 0), gc = byPerson.reduce((a, r) => a + r.count, 0);
+  const foot = `<tfoot><tr><td>合計</td>${byPerson.map(r => `<td class="num">${yen(r.sum)}</td>`).join("")}<td class="num">${yen(grand)}<small>${gc}点</small></td></tr></tfoot>`;
+  $("catTable").innerHTML = head + `<tbody>${body}</tbody>` + foot;
+}
+
+function renderControls() {
+  $("whoSeg").innerHTML = PEOPLE.map(i =>
+    `<button type="button" data-who="${i}" aria-pressed="${selWho === i}">${esc(nm(i))}</button>`).join("");
+  $("catSeg").innerHTML = CATS.map(c =>
+    `<button type="button" data-cat="${c.key}" style="--cc:${c.color}" aria-pressed="${selCat === c.key}">${c.key}</button>`).join("");
+  const opts = [["all", "全部"], ...PEOPLE.map(i => ["p" + i, nm(i)]), ...CATS.map(c => ["c" + c.key, c.key])];
+  $("filters").innerHTML = opts.map(([k, label]) =>
+    `<button class="chip" type="button" data-f="${esc(k)}" aria-pressed="${filter === k}">${esc(label)}</button>`).join("");
+}
+
+function renderSales() {
+  const list = sales.filter(s => filter === "all" || (filter[0] === "p" && s.who === Number(filter.slice(1))) || (filter[0] === "c" && s.cat === filter.slice(1)))
+    .slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+  $("sales").innerHTML = list.length ? list.map(s => `<li>
+    <span class="pill">${esc(nm(s.who))}</span>
+    <span class="item"><span class="ctag" style="--cc:${catColor(s.cat)}">${esc(s.cat || "その他雑貨")}</span>${esc(s.item || "")}${s.qty > 1 ? ` <small class="num">${yen(s.price)} × ${s.qty}</small>` : ""}<span class="time num">${fmtTime(s.at)}</span></span>
+    <span class="price num">${yen(s.price * s.qty)}</span>
+    <button class="del ${sureId === s.id ? "sure" : ""}" type="button" data-del="${esc(s.id)}">${sureId === s.id ? "消す？" : "取消"}</button></li>`).join("")
+    : `<li class="empty">${sales.length ? "この条件の記録はありません。" : "まだ記録がありません。売れたら上のフォームから追加してください。"}</li>`;
+}
+
+function renderFoot() {
+  $("foot").innerHTML = !sales.length ? "" : confirming
+    ? `<span class="confirm">売上の記録をすべて消します。全員の画面とスプレッドシートから消えます。
+        <button class="danger" type="button" id="yes">すべて消す</button>
+        <button class="ghost" type="button" id="no">やめる</button></span>`
+    : `<button class="ghost" type="button" id="clear">記録を全部消す</button>`;
+}
+
+function renderNames() {
+  for (const i of PEOPLE) { const el = $("name" + i); if (document.activeElement !== el) el.value = names[i] || ""; }
+}
+
+function render() { renderRanks(); renderControls(); renderCatTable(); renderSales(); renderFoot(); renderNames(); }
+
+/* ---------- 操作 ---------- */
+$("addForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const price = Math.round(Number($("price").value));
+  const qty = Math.round(Number($("qty").value) || 1);
+  const err = $("err");
+  if (!price || price < 1) { err.textContent = "金額を1円以上で入れてください。"; return; }
+  if (qty < 1) { err.textContent = "個数は1以上にしてください。"; return; }
+  err.textContent = "";
+  const btn = $("addBtn"); btn.disabled = true; btn.textContent = "保存中…";
+  const ok = await post({ action: "add", who: selWho, cat: selCat, item: $("item").value.trim(), price, qty });
+  btn.disabled = false; btn.textContent = "追加";
+  if (ok) { $("item").value = ""; $("price").value = ""; $("qty").value = 1; $("price").focus(); }
+  else err.textContent = "保存できませんでした。通信を確認してもう一度押してください。";
+});
+
+let nameTimer = null;
+for (const i of PEOPLE) $("name" + i).addEventListener("input", e => {
+  names[i] = e.target.value; namesEditing = true;
+  renderRanks(); renderControls(); renderCatTable(); renderSales();
+  clearTimeout(nameTimer);
+  nameTimer = setTimeout(async () => { await post({ action: "names", names: names.slice() }); namesEditing = false; }, 800);
+});
+
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.who !== undefined) { selWho = Number(t.dataset.who); renderControls(); }
+  else if (t.dataset.cat !== undefined) { selCat = t.dataset.cat; renderControls(); }
+  else if (t.dataset.f !== undefined) { filter = t.dataset.f; renderControls(); renderSales(); }
+  else if (t.dataset.del) {
+    const id = t.dataset.del;
+    if (sureId !== id) { sureId = id; renderSales(); return; }
+    sureId = null; t.disabled = true;
+    if (!(await post({ action: "delete", id }))) { notice("消せませんでした。通信を確認してもう一度試してください。"); renderSales(); }
+    else notice("");
+  }
+  else if (t.id === "clear") { confirming = true; renderFoot(); }
+  else if (t.id === "no") { confirming = false; renderFoot(); }
+  else if (t.id === "yes") { confirming = false; renderFoot(); await post({ action: "clear" }); }
+});
+
+/* ---------- 起動 ---------- */
+render();
+if (!API_URL) {
+  setStatus("bad", "まだスプレッドシートとつながっていません");
+  notice("設定が必要です：index.html の API_URL に、Google Apps Script のウェブアプリURLを入れてください。");
+  $("addPanel").hidden = true;
+} else {
+  setStatus("", "読み込み中…");
+  load();
+  setInterval(load, POLL_MS);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+}
+</script>
+</body>
+</html>
