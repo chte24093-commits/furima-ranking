@@ -5,7 +5,7 @@
 const SALES_SHEET = "売上";
 const SALES_HEAD = ["id", "人番号", "売った人", "ジャンル", "品名", "単価", "個数", "金額", "日時"];
 const NAMES_SHEET = "メンバー";
-const CATS = ["服", "皿", "靴", "その他雑貨"];
+const CATS = ["服", "皿", "靴", "バッグ", "その他雑貨"];
 const PEOPLE = 4;
 
 function sheet_(name, header) {

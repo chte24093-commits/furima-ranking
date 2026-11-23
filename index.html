@@ -12,7 +12,7 @@
   --bg: #eef2f0; --surface: #ffffff; --fg: #1d2a26; --muted: #5d6e68; --line: #d3ddd9;
   --accent: #1f6e55; --accent-fg: #ffffff; --tag: #ffd84d; --tag-fg: #2b2400;
   --gold: #e0a800; --silver: #8d9aa3; --bronze: #b8703a; --danger: #c0392b;
-  --c-fuku: #3b6fd6; --c-sara: #2a9d8f; --c-kutsu: #c2571d; --c-zakka: #8a5cc7;
+  --c-fuku: #3b6fd6; --c-sara: #2a9d8f; --c-kutsu: #c2571d; --c-bag: #b03a6f; --c-zakka: #8a5cc7;
   --display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
   --body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
 }
@@ -20,12 +20,12 @@
   --bg: #121a17; --surface: #1b2622; --fg: #e6efeb; --muted: #9db0a9; --line: #2e3d38;
   --accent: #4fc39a; --accent-fg: #0c1a15; --tag: #f2c94c; --tag-fg: #2b2400;
   --gold: #f2c94c; --silver: #b5c1c8; --bronze: #d9915a; --danger: #ff7b6b;
-  --c-fuku: #7ea3f0; --c-sara: #5cc6b8; --c-kutsu: #f0925a; --c-zakka: #b896ea; color-scheme: dark } }
+  --c-fuku: #7ea3f0; --c-sara: #5cc6b8; --c-kutsu: #f0925a; --c-bag: #ec7fae; --c-zakka: #b896ea; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #121a17; --surface: #1b2622; --fg: #e6efeb; --muted: #9db0a9; --line: #2e3d38;
   --accent: #4fc39a; --accent-fg: #0c1a15; --tag: #f2c94c; --tag-fg: #2b2400;
   --gold: #f2c94c; --silver: #b5c1c8; --bronze: #d9915a; --danger: #ff7b6b;
-  --c-fuku: #7ea3f0; --c-sara: #5cc6b8; --c-kutsu: #f0925a; --c-zakka: #b896ea; color-scheme: dark }
+  --c-fuku: #7ea3f0; --c-sara: #5cc6b8; --c-kutsu: #f0925a; --c-bag: #ec7fae; --c-zakka: #b896ea; color-scheme: dark }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -89,7 +89,7 @@ input, select { font: inherit; font-size: 1rem; color: var(--fg); background: va
   border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; }
 input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 form.add { display: grid; gap: 14px; }
-.seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.seg { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .seg.people { grid-template-columns: repeat(4, 1fr); }
 .seg button { background: var(--bg); color: var(--fg); border: 1px solid var(--line); padding: 10px 6px; font-weight: 700;
   overflow-wrap: anywhere; }
@@ -142,7 +142,8 @@ ul.sales li:last-child { border-bottom: 0; }
   .row { grid-template-columns: 1fr 1fr; }
   .row .f-item { grid-column: 1 / -1; }
   .row button { grid-column: 1 / -1; }
-  .seg.cat, .seg.people { grid-template-columns: repeat(2, 1fr); }
+  .seg.people { grid-template-columns: repeat(2, 1fr); }
+  .seg.cat { grid-template-columns: repeat(3, 1fr); }
   .names { grid-template-columns: 1fr; }
   .rank { grid-template-columns: 48px 1fr; }
   .medal { width: 44px; height: 44px; font-size: 1.05rem; }
@@ -226,9 +227,10 @@ const CATS = [
   { key: "服", color: "var(--c-fuku)" },
   { key: "皿", color: "var(--c-sara)" },
   { key: "靴", color: "var(--c-kutsu)" },
+  { key: "バッグ", color: "var(--c-bag)" },
   { key: "その他雑貨", color: "var(--c-zakka)" },
 ];
-const catColor = k => (CATS.find(c => c.key === k) || CATS[3]).color;
+const catColor = k => (CATS.find(c => c.key === k) || CATS[CATS.length - 1]).color;
 const yen = n => "¥" + n.toLocaleString("ja-JP");
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const $ = id => document.getElementById(id);
